@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -38,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.afterdark.financer.data.models.CategoryEntity
 import kotlinx.coroutines.launch
-
+import com.afterdark.financer.ui.UiState
 
 data class ExpenseActions(
     val addExpense: (CategoryEntity, Double, String?) -> Unit,
@@ -55,14 +57,16 @@ fun HomeScreen(viewModel : HomeScreenViewModel = viewModel(factory = HomeScreenV
 
     val errorUi = viewModel.errorUi.collectAsState()
 
+    var clearConfirm by rememberSaveable { mutableStateOf(false)}
+
 
     var totalSpend = 0.0
     val scope = rememberCoroutineScope()
     var createCategoryDiag by rememberSaveable { mutableStateOf(false) }
 
-    if(uiState.value.categoryUi is UiState.Success){
+    if(uiState.value.categoryUi is UiState.Ok){
        totalSpend =
-           (uiState.value.categoryUi as UiState.Success).data.sumOf { cat -> cat.currentExpense }
+           (uiState.value.categoryUi as UiState.Ok).data.sumOf { cat -> cat.currentExpense }
     }
 
     val actions = ExpenseActions(
@@ -102,11 +106,11 @@ fun HomeScreen(viewModel : HomeScreenViewModel = viewModel(factory = HomeScreenV
             return@Column
         }
 
-        if(uiState.value.selectedUi is UiState.Success){
-            TopStats((uiState.value.selectedUi as UiState.Success).data ,totalSpend=totalSpend, transaction = uiState.value.latestTransaction)
+        if(uiState.value.selectedUi is UiState.Ok){
+            TopStats((uiState.value.selectedUi as UiState.Ok).data ,totalSpend=totalSpend, transaction = uiState.value.latestTransaction)
         }
 
-        if(uiState.value.categoryUi is UiState.Success && uiState.value.selectedUi is UiState.Success){
+        if(uiState.value.categoryUi is UiState.Ok && uiState.value.selectedUi is UiState.Ok){
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
@@ -114,13 +118,13 @@ fun HomeScreen(viewModel : HomeScreenViewModel = viewModel(factory = HomeScreenV
                     .fillMaxHeight(0.7f)
             ) {
                 items(
-                    (uiState.value.categoryUi as UiState.Success).data,
+                    (uiState.value.categoryUi as UiState.Ok).data,
                     key = {cat -> cat.id}
                 ){
                     cat -> CategoryComponent(
                         category = cat,
-                        budget = (uiState.value.selectedUi as UiState.Success).data.budget,
-                        personalView = (uiState.value.itemizedBudget as UiState.Success).data ?: false,
+                        budget = (uiState.value.selectedUi as UiState.Ok).data.budget,
+                        personalView = (uiState.value.itemizedBudget as UiState.Ok).data ?: false,
                         actions=actions,
                         errors = errorUi.value.categoryRename
                     )
@@ -138,20 +142,38 @@ fun HomeScreen(viewModel : HomeScreenViewModel = viewModel(factory = HomeScreenV
             when(uiState.value.itemizedBudget){
                 is UiState.Loading -> Unit
                 is UiState.Error -> Text(text="Error")
-                is UiState.Success -> {
+                is UiState.Ok -> {
                     Button(onClick = {viewModel.setItemizedView()},modifier = Modifier.fillMaxWidth()) {
-                        if(!(uiState.value.itemizedBudget as UiState.Success).data){
+                        if(!(uiState.value.itemizedBudget as UiState.Ok).data){
                             Text(text = "Go to itemized view")
                         } else {
                             Text(text = "Go to global view")
                         }
                     }
                 }
+
+                else -> {}
             }
 
-            Button(onClick = {viewModel.clearAllExpenses()},modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = {clearConfirm=true},
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(text = "Clear all expenses")
             }
+        }
+
+        if(clearConfirm){
+            ChangeValueDialogComponent(
+                onDismissRequest = {clearConfirm=false},
+                onConfirmation = { inp ->
+                    viewModel.clearAllExpenses()
+                    clearConfirm=false
+                },
+                dialogTitle = "Clear expenses",
+                contentShow = false
+            )
         }
 
 
@@ -180,14 +202,14 @@ fun HomeScreen(viewModel : HomeScreenViewModel = viewModel(factory = HomeScreenV
 @Composable
 fun ChangeValueDialogComponent(
     onDismissRequest: () -> Unit,
-    onConfirmation: (payload: Pair<String?, String?>) -> Unit,
+    onConfirmation: (Pair<String?, String?>) -> Unit,
     dialogTitle: String,
     validation:(input: String)-> Boolean={true},
     addedComment: Boolean=false,
     contentShow: Boolean=true,
     numeric: Boolean=false,
-    startInitValue: String,
-    errors: String?
+    startInitValue: String = "",
+    errors: String? = null
 ) {
     var userEdit by rememberSaveable { mutableStateOf(startInitValue) }
     var comment by rememberSaveable { mutableStateOf<String?>(null) }

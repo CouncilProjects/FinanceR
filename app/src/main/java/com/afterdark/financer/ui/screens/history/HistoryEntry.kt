@@ -30,16 +30,11 @@ fun HistoryEntry(transact: TransactionWithCategory,modifier: Modifier = Modifier
     var openComment by rememberSaveable { mutableStateOf(false) }
     val pattern = "yyyy-MM-dd"
     val simpleDateFormat: SimpleDateFormat = SimpleDateFormat(pattern)
+
     val actionColor = if(transact.transaction.valueMoved<0){
         Color.Green
     } else {
         Color.Red
-    }
-
-    if(transact.transaction.valueMoved<0){
-        "Removed"
-    } else {
-        "Added"
     }
 
     Row(
@@ -57,7 +52,6 @@ fun HistoryEntry(transact: TransactionWithCategory,modifier: Modifier = Modifier
             }
         } else {
             IconButton(onClick = {},modifier = Modifier.weight(1f), enabled = false) {
-
             }
         }
     }

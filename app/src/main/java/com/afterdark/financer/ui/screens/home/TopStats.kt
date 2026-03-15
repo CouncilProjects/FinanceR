@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afterdark.financer.data.models.ProfileEntity
 import com.afterdark.financer.data.models.TransactionWithCategory
+import com.afterdark.financer.ui.UiState
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -40,7 +41,7 @@ fun TopStats(
         Text(text = "Profile : ${profile.name}")
         Text(text = "Funds spend ${"%.2f/%.2f".format(totalSpend, profile.budget)} (${percentSpend} %)")
         Text(text = "Funds remaining ${"%.2f".format(profile.budget - totalSpend)} $ (${"%.2f".format(100.0 - percentSpend)} %)")
-        if(transaction is UiState.Success && transaction.data!=null){
+        if(transaction is UiState.Ok && transaction.data!=null){
             Text(text = "Last entry: ${transaction.data.categoryName} ${"%.2f".format(transaction.data.transaction.valueMoved)}$ ${simpleDateFormat.format(
                 Date(transaction.data.transaction.createdAt))}")
         }

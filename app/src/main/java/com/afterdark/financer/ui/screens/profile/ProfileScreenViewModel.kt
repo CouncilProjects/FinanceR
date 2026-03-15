@@ -10,6 +10,9 @@ import com.afterdark.financer.FinanceRApplication
 import com.afterdark.financer.data.models.ProfileEntity
 import com.afterdark.financer.data.repositories.PreferencesRepository
 import com.afterdark.financer.data.repositories.ProfileRepository
+import com.afterdark.financer.ui.TriggeredUi
+import com.afterdark.financer.ui.UiState
+import com.afterdark.financer.ui.asUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,29 +22,33 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-class ProfileScreenViewModel(val profileRepo: ProfileRepository,val preferenceRepo: PreferencesRepository) : ViewModel() {
-
-    val uiState = combine(profileRepo.getAllProfiles(),preferenceRepo.lastView) { devProfiles,selected ->
-        ProfileScreenUI(
-            deviceProfiles = DeviceProfiles.Success(profiles = devProfiles),
-            selectedProfile = devProfiles.firstOrNull { profile -> profile.id==selected })
-    }.flowOn(Dispatchers.Default)
+import  com.afterdark.financer.ui.screens.profile.ProfileScreenUi
+class ProfileScreenViewModel(private val profileRepo: ProfileRepository,private val preferenceRepo: PreferencesRepository) : ViewModel() {
+    
+    
+    private val _creationUi = MutableStateFlow<UiState<String>>(TriggeredUi.NotStarted)
+    
+    val uiState = combine(
+        profileRepo.getAllProfiles().asUiState(),
+        preferenceRepo.lastView,
+        _creationUi
+    ) { devProfiles,selected,creationUi ->
+        ProfileScreenUi(
+            deviceProfiles = devProfiles,
+            selectedProfile = if(devProfiles is UiState.Ok){devProfiles.data.firstOrNull { profile -> profile.id==selected }} else null,
+            creationErrors = creationUi
+        )
+    }
+        .flowOn(Dispatchers.Default)
         .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = ProfileScreenUI(
-            deviceProfiles = DeviceProfiles.Loading,
-            selectedProfile = null)
+        initialValue = ProfileScreenUi()
     )
-
-    private var _errorUi = MutableStateFlow<CreationErrorUI>(CreationErrorUI.None)
-    val errorState = _errorUi.asStateFlow()
 
     fun changeProfileBudget(newbudget: Double){
         viewModelScope.launch {
             val newProfile = uiState.value.selectedProfile?.copy(budget = newbudget) ?: return@launch
-
             profileRepo.updateProfile(newProfile)
         }
     }
@@ -52,7 +59,8 @@ class ProfileScreenViewModel(val profileRepo: ProfileRepository,val preferenceRe
         }
     }
 
-    fun deleteUser(id:Long){
+    //Assume the currently selected use will be executed.. i mean deleted
+    fun deleteUser(){
         viewModelScope.launch {
             val profile = uiState.value.selectedProfile ?: return@launch
             preferenceRepo.setLastViewedProfile(-1)
@@ -61,24 +69,26 @@ class ProfileScreenViewModel(val profileRepo: ProfileRepository,val preferenceRe
     }
 
     suspend fun createProfile(name: String,budget: Double) : Boolean{
-        _errorUi.update { error ->
-            CreationErrorUI.Loading
+        _creationUi.update { error ->
+            UiState.Loading
         }
-
-            val exists = (uiState.value.deviceProfiles as DeviceProfiles.Success).profiles.firstOrNull { prof->prof.name==name }
-            if(exists!=null){
-                _errorUi.update { error ->
-                    CreationErrorUI.Error(errorMessage = "Profile name taken")
-                }
-                return false
-            } else {
-                profileRepo.insertProfile(ProfileEntity(name=name, budget = budget))
-                _errorUi.update { error ->
-                    CreationErrorUI.None
-                }
-                return true
+        val exists = (uiState.value.deviceProfiles as UiState.Ok).data.firstOrNull { prof->prof.name==name }
+        if(exists!=null){
+            _creationUi.update { error ->
+                UiState.Error(errorMessage = "No duplicate profile name")
             }
+            return false
+        } else {
+            profileRepo.insertProfile(ProfileEntity(name=name, budget = budget))
+            _creationUi.update { error ->
+                UiState.Ok(data = "User profile created you may selected it") //Note i wont mark it notStarted because i want a Ui confirmation that its done
+            }
+            return true
+        }
+    }
 
+    fun ackSuccessfulCreation(){
+        _creationUi.update { TriggeredUi.NotStarted }
     }
 
     companion object{

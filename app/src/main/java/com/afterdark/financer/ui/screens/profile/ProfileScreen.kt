@@ -1,5 +1,6 @@
 package com.afterdark.financer.ui.screens.profile
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -33,33 +34,38 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.afterdark.financer.ui.UiState
 import com.afterdark.financer.ui.theme.AppTheme
 import kotlinx.coroutines.launch
 
 
 @Composable
 fun ProfileScreen(modifier: Modifier = Modifier, viewModel : ProfileScreenViewModel = viewModel(factory = ProfileScreenViewModel.Factory)) {
-    val uiState = viewModel.uiState.collectAsState()
-    val errorUiState = viewModel.errorState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
     val scope = rememberCoroutineScope() // Compose coroutine scope
-    val selected = uiState.value.selectedProfile
+    val context = LocalContext.current
+    val selected = uiState.selectedProfile
 
     var createDiag by rememberSaveable { mutableStateOf(false) }
     var deleteDiag by rememberSaveable { mutableStateOf(false) }
 
-    if(uiState.value.deviceProfiles is DeviceProfiles.Loading){
-        CircularProgressIndicator()
-        return
-    }
+
 
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.verticalScroll(rememberScrollState())
     ) {
+        if(uiState.deviceProfiles is UiState.Loading){
+            CircularProgressIndicator()
+            return
+        }
+
         if(selected!=null){
             UserDisplay(
                 profileName = selected.name,
@@ -79,23 +85,31 @@ fun ProfileScreen(modifier: Modifier = Modifier, viewModel : ProfileScreenViewMo
         } else {
             Text(text = "Select or create a profile")
         }
+
         Spacer(modifier= Modifier.height(4.dp))
         HorizontalDivider(thickness = 2.dp)
+
         LongBasicDropdownMenu(
             selected = selected?.name,
-            menuData = (uiState.value.deviceProfiles as DeviceProfiles.Success)
-                .profiles
+            menuData = (uiState.deviceProfiles as UiState.Ok)
+                .data
                 .filter { profile -> profile.id!=selected?.id }
                 .map { profile ->  Pair(profile.id,profile.name) },
-            selectNewProfile = {newId -> viewModel.changeActiveProfile(newId)}
-
+            selectNewProfile = {newId -> viewModel.changeActiveProfile(newId) }
         )
+
         Spacer(modifier= Modifier.height(4.dp))
         HorizontalDivider(thickness = 2.dp)
+
         Button(
             onClick = {createDiag=true}
         ) {
             Text(text = "Add a profile")
+        }
+
+        if(uiState.creationErrors is UiState.Ok){
+            Toast.makeText(context,(uiState.creationErrors as UiState.Ok).data, Toast.LENGTH_LONG).show()
+            viewModel.ackSuccessfulCreation()
         }
 
         if(createDiag){
@@ -111,12 +125,12 @@ fun ProfileScreen(modifier: Modifier = Modifier, viewModel : ProfileScreenViewMo
                     }
 
                                  },
-                createErrorUi = errorUiState.value
+                createErrorUi = uiState.creationErrors
             )
         } else if (deleteDiag){
             YouSureAlert(
                 onDismissRequest = {deleteDiag=false},
-                onConfirmation = {viewModel.deleteUser(selected?.id?:-1)}
+                onConfirmation = {viewModel.deleteUser()}
             )
         }
     }
@@ -179,7 +193,7 @@ fun CreateProfileDialogComponent(
     onDismissRequest: () -> Unit,
     onConfirmation: (payload: Pair<String, Double>) -> Unit,
     dialogTitle: String,
-    createErrorUi: CreationErrorUI
+    createErrorUi: UiState<String>
 ) {
     var userEdit by rememberSaveable { mutableStateOf("") }
     var budget by rememberSaveable { mutableStateOf("0") }
@@ -196,11 +210,11 @@ fun CreateProfileDialogComponent(
                     onValueChange = {userEdit=it},
                     singleLine = true,
                     label = {Text(text = "Name")},
-                    isError = createErrorUi is CreationErrorUI.Error,
+                    isError = createErrorUi is UiState.Error,
 
                     modifier = Modifier.padding(12.dp)
                 )
-                if (createErrorUi is CreationErrorUI.Error) {
+                if (createErrorUi is UiState.Error) {
                     Text(
                         text = createErrorUi.errorMessage, // your error message
                         color = MaterialTheme.colorScheme.error

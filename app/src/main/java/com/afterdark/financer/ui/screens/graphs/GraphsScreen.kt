@@ -23,23 +23,17 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.jaikeerthick.composable_graphs.composables.pie.PieChart
-import com.jaikeerthick.composable_graphs.composables.pie.model.PieData
 import kotlin.math.cos
 import kotlin.math.sin
 import android.graphics.Paint
 import androidx.compose.foundation.layout.aspectRatio
+import com.afterdark.financer.ui.UiState
 
 @Composable
 fun GraphsScreen(viewModel: GraphsViewModel = viewModel(factory = GraphsViewModel.FACTORY), modifier: Modifier= Modifier){
     val uiState by viewModel.uiState.collectAsState()
     LocalContext.current
 
-    listOf(
-        PieData(value = 130F, label = "HTC", color = Color.Green),
-        PieData(value = 260F, label = "Apple", labelColor = Color.Blue),
-        PieData(value = 500F, label = "Google"),
-    )
 
     Column(
         Modifier.fillMaxSize()
@@ -50,16 +44,16 @@ fun GraphsScreen(viewModel: GraphsViewModel = viewModel(factory = GraphsViewMode
             }
 
             is UiState.Error -> {
-                Text(text=(uiState.categories as UiState.Error).message, color = MaterialTheme.colorScheme.error)
+                Text(text=(uiState.categories as UiState.Error).errorMessage, color = MaterialTheme.colorScheme.error)
             }
 
-            is UiState.Success -> {
-                if(uiState.view== ViewTypes.BAR){
+            is UiState.Ok -> {
+                if(uiState.view != ViewTypes.DONUT){
                     //maybe do a bar chart some time
                 } else {
 
                     CustomPieChart(
-                        data = (uiState.categories as UiState.Success).data
+                        data = (uiState.categories as UiState.Ok).data
                             .filter { entry -> entry.currentExpense>0.0 }
                             .mapIndexed {index,entry ->
                                 PieData(
@@ -73,6 +67,8 @@ fun GraphsScreen(viewModel: GraphsViewModel = viewModel(factory = GraphsViewMode
                     )
                 }
             }
+
+            else -> {}
         }
     }
 }

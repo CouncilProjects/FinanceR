@@ -37,8 +37,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.afterdark.financer.ui.TriggeredUi
 import java.text.SimpleDateFormat
 import java.util.Date
+import com.afterdark.financer.ui.UiState
 
 
 @Composable
@@ -54,10 +56,15 @@ fun HistoryScreen(viewModel: HistoryViewModel = viewModel(factory = HistoryViewM
         resultUri?.let { viewModel.createExcelFile(context,it) }
     }
 
-    if (uiState.exportStatus is UiStateTriggered.Success) {
+    if (uiState.exportStatus is UiState.Ok) {
         LaunchedEffect(Unit) {
-            Toast.makeText(context, (uiState.exportStatus as UiStateTriggered.Success).data, Toast.LENGTH_LONG).show()
+            Toast.makeText(context, (uiState.exportStatus as UiState.Ok).data, Toast.LENGTH_LONG).show()
             viewModel.exportSuccessNotified()
+        }
+    } else if (uiState.deletionStatus is UiState.Ok) {
+        LaunchedEffect(Unit) {
+            Toast.makeText(context, (uiState.deletionStatus as UiState.Ok).data, Toast.LENGTH_LONG).show()
+            viewModel.clearHistory(acknowledgement = true)
         }
     }
 
@@ -68,7 +75,7 @@ fun HistoryScreen(viewModel: HistoryViewModel = viewModel(factory = HistoryViewM
     ) {
         Text(text="Your finances Recalled", color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(10.dp))
-        if (uiState.transactions is UiState.Success && (uiState.transactions as UiState.Success).data.isNotEmpty()) {
+        if (uiState.transactions is UiState.Ok && (uiState.transactions as UiState.Ok).data.isNotEmpty()) {
             Column(
                 Modifier.width(IntrinsicSize.Max)
             ){
@@ -77,7 +84,7 @@ fun HistoryScreen(viewModel: HistoryViewModel = viewModel(factory = HistoryViewM
                         val date = SimpleDateFormat("yyyy-MM-dd").format(Date())
                         fileChoseLauncher.launch("financeR-${date}.csv")
                     },
-                    enabled = (uiState.exportStatus is UiStateTriggered.NoStart),
+                    enabled = (uiState.exportStatus is TriggeredUi.NotStarted),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -85,7 +92,7 @@ fun HistoryScreen(viewModel: HistoryViewModel = viewModel(factory = HistoryViewM
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(text = "Export to file")
-                        if (uiState.exportStatus is UiStateTriggered.Loading) {
+                        if (uiState.exportStatus is UiState.Loading) {
                             CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimaryContainer)
                         } else {
                             Icon(
@@ -100,6 +107,7 @@ fun HistoryScreen(viewModel: HistoryViewModel = viewModel(factory = HistoryViewM
                 Button(
                     onClick = {showAlert=true},
                     modifier = Modifier.fillMaxWidth(),
+                    enabled = uiState.deletionStatus !is UiState.Loading,
                     colors = ButtonDefaults.buttonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer, containerColor = MaterialTheme.colorScheme.errorContainer)
                 ) {
                     Text(text="Clear history")
@@ -124,7 +132,7 @@ fun HistoryScreen(viewModel: HistoryViewModel = viewModel(factory = HistoryViewM
                 Text(text = (uiState.transactions as UiState.Error).errorMessage, color = MaterialTheme.colorScheme.error)
             }
 
-            is UiState.Success -> {
+            is UiState.Ok -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -145,7 +153,7 @@ fun HistoryScreen(viewModel: HistoryViewModel = viewModel(factory = HistoryViewM
                     }
 
                     items(
-                        (uiState.transactions as UiState.Success).data,
+                        (uiState.transactions as UiState.Ok).data,
                         key = {tra -> tra.transaction.id}
                     ) {
                         transaction ->
@@ -153,6 +161,8 @@ fun HistoryScreen(viewModel: HistoryViewModel = viewModel(factory = HistoryViewM
                     }
                 }
             }
+
+            else -> {}
         }
 
     }

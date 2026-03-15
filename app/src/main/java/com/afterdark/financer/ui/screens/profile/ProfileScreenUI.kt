@@ -1,8 +1,17 @@
 package com.afterdark.financer.ui.screens.profile
 
 import com.afterdark.financer.data.models.ProfileEntity
+import com.afterdark.financer.ui.TriggeredUi
+import com.afterdark.financer.ui.UiState
 
-data class ProfileScreenUI (
+
+data class ProfileScreenUi(
+    val deviceProfiles : UiState<List<ProfileEntity>> = UiState.Loading,
+    val selectedProfile : ProfileEntity? = null,
+    val creationErrors : UiState<String> = TriggeredUi.NotStarted
+)
+
+data class ProfileScreenUI2 (
     val deviceProfiles : DeviceProfiles = DeviceProfiles.Loading,
     val selectedProfile : ProfileEntity? = null
 )

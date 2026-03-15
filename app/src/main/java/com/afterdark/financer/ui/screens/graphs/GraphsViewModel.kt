@@ -12,6 +12,7 @@ import androidx.navigation.toRoute
 import com.afterdark.financer.FinanceRApplication
 import com.afterdark.financer.data.models.CategoryEntity
 import com.afterdark.financer.data.repositories.CategoryRepository
+import com.afterdark.financer.ui.UiState
 import com.afterdark.financer.ui.screens.Graph
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,21 +24,17 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import com.afterdark.financer.ui.asUiState
 
 
-sealed interface UiState{
-    object Loading : UiState
-    data class Error(val message: String) : UiState
-    data class Success(val data:List<CategoryEntity>) : UiState
-}
 
+//maybe will add more in the future
 enum class ViewTypes{
-    BAR,
     DONUT
 }
 
 data class GraphsUiState(
-    val categories: UiState = UiState.Loading,
+    val categories: UiState<List<CategoryEntity>> = UiState.Loading,
     val view: ViewTypes = ViewTypes.DONUT
 )
 
@@ -47,10 +44,7 @@ class GraphsViewModel(savedState: SavedStateHandle,categoryRepo: CategoryReposit
     private val currentView = MutableStateFlow(ViewTypes.DONUT)
 
     val uiState = combine(
-        categoryRepo.getProfileCategories(routeArgs.userId)
-            .map<List<CategoryEntity>,UiState> { categ -> UiState.Success(categ) }
-            .onStart { emit(UiState.Loading) }
-            .catch { e -> emit(UiState.Error(e.message?:"Not know"))},
+        categoryRepo.getProfileCategories(routeArgs.userId).asUiState(),
         currentView
     ) {categories,view ->
         GraphsUiState(categories=categories,view=view)
@@ -62,7 +56,7 @@ class GraphsViewModel(savedState: SavedStateHandle,categoryRepo: CategoryReposit
         )
 
     fun toogleGraphView(){
-        currentView.update { prev -> if(prev == ViewTypes.BAR) ViewTypes.DONUT else ViewTypes.BAR }
+       //leave empy for now
     }
 
 

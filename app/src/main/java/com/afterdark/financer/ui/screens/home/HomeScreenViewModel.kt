@@ -17,6 +17,7 @@ import com.afterdark.financer.data.repositories.CategoryRepository
 import com.afterdark.financer.data.repositories.PreferencesRepository
 import com.afterdark.financer.data.repositories.ProfileRepository
 import com.afterdark.financer.data.repositories.TransactionRepository
+import com.afterdark.financer.ui.UiState
 import com.afterdark.financer.ui.screens.Home
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -31,14 +32,8 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.afterdark.financer.ui.asUiState
 
-
-//Entention function. It takes a flow, and maps it to a UiState object. when it starts it emits a load, and on errors emits it back
-fun<T> Flow<T>.asUiState() : Flow<UiState<T>>{
-    return map<T, UiState<T>> { UiState.Success(it) as UiState<T> }
-        .onStart { emit(UiState.Loading) }
-        .catch {e-> emit(UiState.Error(e.message ?: "Not known Error")) }
-}
 class HomeScreenViewModel(
     val savedState: SavedStateHandle,
     val categoryRepo: CategoryRepository,
@@ -73,7 +68,7 @@ class HomeScreenViewModel(
     val errorUi = _errorUi.asStateFlow()
 
     fun addCategory(nameNew: String) : Boolean{
-        val exists = (uiState.value.categoryUi as UiState.Success).data.firstOrNull { cat->cat.name== nameNew}
+        val exists = (uiState.value.categoryUi as UiState.Ok).data.firstOrNull { cat->cat.name== nameNew}
         if(exists!=null){
             _errorUi.update { old -> old.copy(categoryCreation = "No duplicate category name") }
             return false
@@ -83,7 +78,7 @@ class HomeScreenViewModel(
             try {
                 val newcat = CategoryEntity(
                     name = nameNew,
-                    profileId = (uiState.value.selectedUi as UiState.Success).data.id
+                    profileId = (uiState.value.selectedUi as UiState.Ok).data.id
                 )
                 categoryRepo.insertCategory(newcat)
                 _errorUi.update { old -> old.copy(categoryCreation = null) }
@@ -125,11 +120,13 @@ class HomeScreenViewModel(
 
     fun clearAllExpenses(){
         viewModelScope.launch {
-            (uiState.value.categoryUi as UiState.Success).data.forEach { categoryElem ->
-                val updatedCat = categoryElem.copy(currentExpense = 0.0)
-                val transaction = TransactionEntity(categoryId = categoryElem.id, valueMoved = -categoryElem.currentExpense, comment = "System action triggered by user clear")
-                categoryRepo.updateCategory(updatedCat)
-                transactionRepository.insertTransaction(transaction)
+            (uiState.value.categoryUi as UiState.Ok).data
+                .filter { elem -> elem.currentExpense>0.0 }
+                .forEach { categoryElem ->
+                    val updatedCat = categoryElem.copy(currentExpense = 0.0)
+                    val transaction = TransactionEntity(categoryId = categoryElem.id, valueMoved = -categoryElem.currentExpense, comment = "System action triggered by user clear")
+                    categoryRepo.updateCategory(updatedCat)
+                    transactionRepository.insertTransaction(transaction)
             }
         }
     }
@@ -148,7 +145,7 @@ class HomeScreenViewModel(
     }
 
     fun renameCategory(category:CategoryEntity,nameNew: String) : Boolean{
-        val exists = (uiState.value.categoryUi as UiState.Success).data.firstOrNull { cat->cat.name== nameNew}
+        val exists = (uiState.value.categoryUi as UiState.Ok).data.firstOrNull { cat->cat.name== nameNew}
         if(exists!=null){
             _errorUi.update { old -> old.copy(categoryRename = "No duplicate category name") }
             return false

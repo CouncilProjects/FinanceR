@@ -13,41 +13,36 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.toRoute
 import com.afterdark.financer.FinanceRApplication
 import com.afterdark.financer.data.repositories.TransactionRepository
+import com.afterdark.financer.ui.TriggeredUi
 import com.afterdark.financer.ui.screens.History
+import com.afterdark.financer.ui.UiState
+import com.afterdark.financer.ui.asUiState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 
 
-fun<T> Flow<T>.asUiState() : Flow<UiState<T>> {
-    return map<T, UiState<T>> { UiState.Success(it) as UiState<T> }
-        .onStart { emit(UiState.Loading) }
-        .catch { err -> emit(UiState.Error(errorMessage = err.message?:"Not know")) }
-}
-
-
 class HistoryViewModel(val savedState: SavedStateHandle,val transactionRepo: TransactionRepository) : ViewModel() {
 
     val args = savedState.toRoute<History>()
 
-    private val _exportStatus = MutableStateFlow<UiStateTriggered<String>>(UiStateTriggered.NoStart)
+    private val _exportStatus = MutableStateFlow<UiState<String>>(TriggeredUi.NotStarted)
+
+    private val _deletionStatus = MutableStateFlow<UiState<String>>(TriggeredUi.NotStarted)
 
     val uiState = combine(
         transactionRepo.getAllProfileTransactions(args.userId).asUiState(),
-        _exportStatus
-    ) {transactions,exportState ->
-        HistoryUiState(transactions=transactions, exportStatus = exportState)
+        _exportStatus,
+        _deletionStatus
+    ) {transactions,exportState,deleteState ->
+        HistoryUiState(transactions=transactions, exportStatus = exportState, deletionStatus = deleteState)
     }.flowOn(Dispatchers.Default)
         .stateIn(
         scope = viewModelScope,
@@ -55,9 +50,16 @@ class HistoryViewModel(val savedState: SavedStateHandle,val transactionRepo: Tra
         initialValue = HistoryUiState()
     )
 
-    fun clearHistory(){
+    fun clearHistory(acknowledgement: Boolean = false){
+        if(acknowledgement){
+            _deletionStatus.update { TriggeredUi.NotStarted }
+            return
+        }
+
+        _deletionStatus.update { UiState.Loading }
         viewModelScope.launch(Dispatchers.IO){
             transactionRepo.clearProfileTransactions(args.userId)
+            _deletionStatus.update { UiState.Ok(data = "Successfully deleted history") }
         }
     }
 
@@ -66,7 +68,7 @@ class HistoryViewModel(val savedState: SavedStateHandle,val transactionRepo: Tra
     val simpleDateFormat: SimpleDateFormat = SimpleDateFormat(pattern)
 
     fun createExcelFile(context: Context, uri: Uri){
-        _exportStatus.update { UiStateTriggered.Loading }
+        _exportStatus.update { UiState.Loading }
         viewModelScope.launch(Dispatchers.IO) {
             val transactions = transactionRepo.getAllProfileTransactions(args.userId).first() //get a snapshot of it
             context.contentResolver.openOutputStream(uri)?.use { stream ->
@@ -88,19 +90,19 @@ class HistoryViewModel(val savedState: SavedStateHandle,val transactionRepo: Tra
                 }
                 stream.close()
             }
-           _exportStatus.update { UiStateTriggered.Success(data = "File downloaded") }
+           _exportStatus.update { UiState.Ok(data = "File downloaded") }
         }
     }
 
     fun exportSuccessNotified(){
-        _exportStatus.update { UiStateTriggered.NoStart }
+        _exportStatus.update { TriggeredUi.NotStarted }
     }
 
     private fun escapeString(input: String): String{
-        if(input.contains(",") || input.contains("\n") || input.contains("\"")){
-            return  "\"${input.replace("\"","\"\"")}\""
+        return if(input.contains(",") || input.contains("\n") || input.contains("\"")){
+            "\"${input.replace("\"","\"\"")}\""
         } else {
-            return input
+            input
         }
     }
 

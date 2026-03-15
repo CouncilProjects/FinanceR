@@ -3,6 +3,7 @@ package com.afterdark.financer.ui.screens.home
 import com.afterdark.financer.data.models.CategoryEntity
 import com.afterdark.financer.data.models.ProfileEntity
 import com.afterdark.financer.data.models.TransactionWithCategory
+import com.afterdark.financer.ui.UiState
 
 
 data class HomeScreenUI (
@@ -24,8 +25,3 @@ val HomeScreenUI.isLoading: Boolean
                 itemizedBudget is UiState.Loading
 
 
-sealed interface UiState<out T>{
-    object Loading: UiState<Nothing>
-    data class Success<T>(val data:T) : UiState<T>
-    data class Error(val message: String) : UiState<Nothing>
-}
