@@ -1,0 +1,30 @@
+*.iml
+.gradle/
+local.properties
+
+# Android Studio
+.idea/
+
+# macOS
+.DS_Store
+
+# Build
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# APK / bundle
+*.apk
+*.ap_
+*.aab
+/release/
+/releases/
+app/release/
+
+# Signing keys
+*.jks
+*.keystore
+
+# Logs
+*.log
