@@ -18,14 +18,12 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -150,7 +148,7 @@ fun UserDisplay(profileName:String, created:Long, deleteUser:()-> Unit, modifier
         Text(text = profileName)
         Text(text = "Since: ${date}")
         Button(onClick = {deleteUser()}, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer)) {
-            Row() {
+            Row {
                 Text(text="Delete")
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete profile")
             }
@@ -312,7 +310,7 @@ fun CreateProfileDialogComponent(
             Text(text = dialogTitle)
         },
         text = {
-            Column() {
+            Column {
                 TextField(
                     value = userEdit,
                     onValueChange = {userEdit=it},
@@ -408,7 +406,7 @@ fun YouSureAlert(
 @Preview(showBackground = true,uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun ProfilePreview(){
-    AppTheme() {
+    AppTheme {
         LongBasicDropdownMenu(
             selected = "Jhon jhon",
             menuData = List(100) { Pair(1222,"Option ${it + 1}") },

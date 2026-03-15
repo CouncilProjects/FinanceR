@@ -159,10 +159,11 @@ fun HomeScreen(viewModel : HomeScreenViewModel = viewModel(factory = HomeScreenV
         if(createCategoryDiag){
             ChangeValueDialogComponent(
                 onDismissRequest = {createCategoryDiag=false},
-                validation = {it -> it.isNotEmpty() },
-                onConfirmation = { name->
+                validation = { it.isNotEmpty() },
+                onConfirmation = { input: Pair<String?, String?>->
                     scope.launch {
-                        val ok = viewModel.addCategory(name as String)
+                        if(input.first==null) return@launch
+                        val ok = viewModel.addCategory(input.first as String)
                         if(ok){
                             createCategoryDiag=false
                         }
@@ -179,7 +180,7 @@ fun HomeScreen(viewModel : HomeScreenViewModel = viewModel(factory = HomeScreenV
 @Composable
 fun ChangeValueDialogComponent(
     onDismissRequest: () -> Unit,
-    onConfirmation: (payload: Any) -> Unit,
+    onConfirmation: (payload: Pair<String?, String?>) -> Unit,
     dialogTitle: String,
     validation:(input: String)-> Boolean={true},
     addedComment: Boolean=false,
@@ -252,11 +253,9 @@ fun ChangeValueDialogComponent(
                 enabled = valid,
                 onClick = {
                     val primaryValue = if(numeric) (userEdit.toDouble() * times).toString() else userEdit
-                    if (!addedComment) {
-                        onConfirmation(primaryValue)
-                    } else {
-                        onConfirmation(Pair(primaryValue,comment))
-                    }
+                    //always send a Pair of the 2 possible inputs even when one is not used
+                    onConfirmation(Pair(primaryValue,comment))
+
                 }
             ) {
                 Text("Confirm")

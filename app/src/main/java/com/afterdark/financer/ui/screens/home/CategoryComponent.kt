@@ -28,7 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import com.afterdark.financer.data.models.CategoryEntity
 import com.jaikeerthick.composable_graphs.composables.bar.BarGraph
@@ -55,9 +56,13 @@ fun CategoryComponent(
     errors:String?,
     modifier: Modifier = Modifier
 ){
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val oneThirdWidth = screenWidth / 2.5f
+
+    val screenWidth = LocalWindowInfo.current.containerSize
+    val density = LocalDensity.current
+    val assignedWidth = with(density){
+        (screenWidth.width / 2.5f).toDp()
+    }
+
 
 
 
@@ -191,7 +196,7 @@ fun CategoryComponent(
             modifier = Modifier
                 .fillMaxHeight()
                 .padding(8.dp)
-                .width(oneThirdWidth)
+                .width(assignedWidth)
         ) {
             // Top info column
             Column(
@@ -262,7 +267,7 @@ fun CategoryComponent(
                 dialogTitle = actionTitle,
                 onDismissRequest = {openAction= CurrentExpenseAction.NONE},
                 validation = actionValidator,
-                onConfirmation = actionConfirmation as (payload: Any) -> Unit,
+                onConfirmation = actionConfirmation,
                 startInitValue = initValue,
                 addedComment = actionNeedsComment,
                 contentShow = openAction != CurrentExpenseAction.DELETE,

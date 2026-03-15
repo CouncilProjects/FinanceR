@@ -2,7 +2,6 @@ package com.afterdark.financer.ui.screens.home
 
 import com.afterdark.financer.data.models.CategoryEntity
 import com.afterdark.financer.data.models.ProfileEntity
-import com.afterdark.financer.data.models.TransactionEntity
 import com.afterdark.financer.data.models.TransactionWithCategory
 
 

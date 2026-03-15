@@ -1,44 +1,40 @@
 package com.afterdark.financer.ui.screens
 
-import android.util.Log
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AutoGraph
-import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.afterdark.financer.ui.screens.graphs.GraphsScreen
 import com.afterdark.financer.ui.screens.history.HistoryScreen
 import com.afterdark.financer.ui.screens.home.HomeScreen
 import com.afterdark.financer.ui.screens.profile.ProfileScreen
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlin.reflect.KClass
 
 
 @Serializable
@@ -54,28 +50,29 @@ data class History(val userId:Long)
 data class Graph(val userId:Long)
 
 
+@SuppressLint("RestrictedApi")
+@OptIn(ExperimentalSerializationApi::class)
 @Composable
 fun FinanceRApp(viewModel : AppViewModel = viewModel(factory = AppViewModel.Factory)) {
     val ui by viewModel.uiState.collectAsState()
     val starting = viewModel.startingValue
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.PROFILE) }
-    val navController = rememberNavController()
 
-    //until we read the datastore and see if there is a last visited profile we dont render anything.
+    val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+
+
+    //until we read the datastore and see if there is a last visited profile we don't render anything.
     // typed route start destination
     val startDest: Any = if (starting!=null && starting>-1){
-        Log.d("NAV","starting is : ${starting}")
-        currentDestination = AppDestinations.HOME
         Home(starting)
     } else {
-        currentDestination = AppDestinations.PROFILE
         Profile
     }
 
 
     when(ui){
         is SimpleUi.Loading -> {
-            Scaffold() {innerPadding ->
+            Scaffold {innerPadding ->
                 Column(modifier = Modifier.padding(innerPadding),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     CircularProgressIndicator()
@@ -92,9 +89,9 @@ fun FinanceRApp(viewModel : AppViewModel = viewModel(factory = AppViewModel.Fact
                             icon = { Icon(dest.icon, contentDescription = dest.label) },
                             label = { Text(dest.label) },
                             enabled = dest.label=="Profile" || (ui as SimpleUi.Done).userId>-1,
-                            selected = dest == currentDestination,
+                            selected = dest.isTheActiveRoute(backStackEntry),
                             onClick = {
-                                currentDestination = dest
+                                if(dest.isTheActiveRoute(backStackEntry)) return@item //don't let user double visit
                                 // navigate using typed routes
                                 val routeObj = when (dest) {
                                     AppDestinations.HOME -> Home((ui as SimpleUi.Done).userId)
@@ -112,7 +109,7 @@ fun FinanceRApp(viewModel : AppViewModel = viewModel(factory = AppViewModel.Fact
                     Column(modifier = Modifier.padding(innerPadding)) {
                         NavHost(navController = navController, startDestination = startDest) {
                             composable<Home> { backStackEntry ->
-                                val args = backStackEntry.toRoute<Home>()
+                                backStackEntry.toRoute<Home>()
                                 HomeScreen()
                             }
                             composable<Profile> { backStackEntry ->
@@ -120,11 +117,11 @@ fun FinanceRApp(viewModel : AppViewModel = viewModel(factory = AppViewModel.Fact
                                 ProfileScreen()
                             }
                             composable<History> { backStackEntry ->
-                                val args = backStackEntry.toRoute<History>()
+                                backStackEntry.toRoute<History>()
                                 HistoryScreen()
                             }
                             composable<Graph> { backStackEntry ->
-                                val args = backStackEntry.toRoute<Graph>()
+                                backStackEntry.toRoute<Graph>()
                                 GraphsScreen()
                             }
                         }
@@ -138,10 +135,16 @@ fun FinanceRApp(viewModel : AppViewModel = viewModel(factory = AppViewModel.Fact
 enum class AppDestinations( // NOTE the AppDestinations here are pure UI, they need to be mapped to the actual typed routes
     val label: String,
     val icon: ImageVector,
+    val typedRoute: KClass<*>
 ) {
-    HOME("Home", Icons.Default.Home),
-    HISTORY("History", Icons.Default.History),
-    GRAPH("Graphs",Icons.Default.AutoGraph),
-    PROFILE("Profile", Icons.Default.AccountBox), ;
+    HOME("Home", Icons.Default.Home, Home::class),
+    HISTORY("History", Icons.Default.History, History::class),
+    GRAPH("Graphs",Icons.Default.AutoGraph, Graph::class),
+    PROFILE("Profile", Icons.Default.AccountBox, Profile::class)
+    ;
+
+    fun isTheActiveRoute(backStack: NavBackStackEntry?) : Boolean{
+        return backStack?.destination?.hasRoute(typedRoute) == true
+    }
 
 }

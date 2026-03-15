@@ -33,9 +33,9 @@ import androidx.compose.foundation.layout.aspectRatio
 @Composable
 fun GraphsScreen(viewModel: GraphsViewModel = viewModel(factory = GraphsViewModel.FACTORY), modifier: Modifier= Modifier){
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
+    LocalContext.current
 
-    val pieChartData = listOf(
+    listOf(
         PieData(value = 130F, label = "HTC", color = Color.Green),
         PieData(value = 260F, label = "Apple", labelColor = Color.Blue),
         PieData(value = 500F, label = "Google"),

@@ -1,19 +1,15 @@
 package com.afterdark.financer.ui.screens.profile
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.afterdark.financer.data.repositories.ProfileRepository
-import com.afterdark.financer.ui.screens.Profile
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
-import androidx.lifecycle.createSavedStateHandle
-import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.afterdark.financer.FinanceRApplication
 import com.afterdark.financer.data.models.ProfileEntity
 import com.afterdark.financer.data.repositories.PreferencesRepository
+import com.afterdark.financer.data.repositories.ProfileRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -58,8 +54,7 @@ class ProfileScreenViewModel(val profileRepo: ProfileRepository,val preferenceRe
 
     fun deleteUser(id:Long){
         viewModelScope.launch {
-            val profile = uiState.value.selectedProfile
-            if(profile==null) return@launch
+            val profile = uiState.value.selectedProfile ?: return@launch
             preferenceRepo.setLastViewedProfile(-1)
             profileRepo.deleteProfile(profile)
         }
