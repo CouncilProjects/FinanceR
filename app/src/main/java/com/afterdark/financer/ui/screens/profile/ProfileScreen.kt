@@ -5,20 +5,16 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -37,17 +33,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.afterdark.financer.ui.theme.AppTheme
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
 
 
 @Composable
@@ -76,17 +66,16 @@ fun ProfileScreen(modifier: Modifier = Modifier, viewModel : ProfileScreenViewMo
                 created = selected.createdAt,
                 deleteUser = {deleteDiag=true}
             )
+
             Spacer(modifier= Modifier.height(4.dp))
             HorizontalDivider(thickness = 2.dp)
+
             BudgetDisplay(
                 budget = selected.budget,
                 budgetChange = { payload ->
                     viewModel.changeProfileBudget(payload as Double)
                 }
             )
-
-
-
         } else {
             Text(text = "Select or create a profile")
         }
@@ -134,119 +123,10 @@ fun ProfileScreen(modifier: Modifier = Modifier, viewModel : ProfileScreenViewMo
 }
 
 @Composable
-fun UserDisplay(profileName:String, created:Long, deleteUser:()-> Unit, modifier: Modifier= Modifier.fillMaxWidth()){
-
-
-    val pattern = "yyyy-MM-dd"
-    val simpleDateFormat: SimpleDateFormat = SimpleDateFormat(pattern)
-    val date: String = simpleDateFormat.format(Date(created))
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "Current profile")
-        Text(text = profileName)
-        Text(text = "Since: ${date}")
-        Button(onClick = {deleteUser()}, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer)) {
-            Row {
-                Text(text="Delete")
-                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete profile")
-            }
-        }
-    }
-}
-
-
-@Composable
-fun BudgetDisplay(
-    budget:Double,
-    budgetChange:(payload:Any)-> Unit,
-    modifier: Modifier = Modifier.fillMaxWidth()){
-    Column (
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        var alert by rememberSaveable { mutableStateOf(false) }
-
-        Text(text = buildAnnotatedString {
-            append("Current profile budget ")
-            withStyle(style = SpanStyle(color = Color.Green)){
-                append(budget.toString())
-            }
-            append("$")
-        })
-
-        Button( onClick = {alert=true}) {
-            Text(text = "Change")
-        }
-
-        if(alert){
-            ChangeBudgetDialogComponent(
-                onDismissRequest = {alert=false},
-                onConfirmation = budgetChange,
-                dialogTitle = "Set a new budget",
-                startBudget = budget.toString()
-            )
-        }
-    }
-}
-
-
-
-@Composable
-fun ChangeBudgetDialogComponent(
-    onDismissRequest: () -> Unit,
-    onConfirmation: (payload: Double) -> Unit,
-    dialogTitle: String,
-    startBudget: String,
-) {
-    var userEdit by rememberSaveable { mutableStateOf(startBudget) }
-
-    AlertDialog(
-        title = {
-            Text(text = dialogTitle)
-        },
-        text = {
-            TextField(
-                value = userEdit,
-                onValueChange = {userEdit=it},
-                singleLine = true,
-                modifier = Modifier.padding(12.dp)
-            )
-        },
-        onDismissRequest = {
-            onDismissRequest()
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirmation(userEdit.toDoubleOrNull()?:startBudget.toDouble())
-                    onDismissRequest()
-                }
-            ) {
-                Text("Confirm")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                }
-            ) {
-                Text("Dismiss")
-            }
-        }
-    )
-}
-
-
-
-@Composable
 fun LongBasicDropdownMenu(
     selected: String?,
     menuData:List<Pair<Long,String>>,
     selectNewProfile:(id:Long)-> Unit,
-
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
 
