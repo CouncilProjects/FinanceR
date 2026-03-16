@@ -38,9 +38,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.afterdark.financer.ui.TriggeredUi
+import com.afterdark.financer.ui.UiState
 import java.text.SimpleDateFormat
 import java.util.Date
-import com.afterdark.financer.ui.UiState
 
 
 @Composable

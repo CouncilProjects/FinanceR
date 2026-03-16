@@ -1,25 +1,39 @@
 package com.afterdark.financer.ui.screens
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -51,11 +65,12 @@ data class Graph(val userId:Long)
 
 
 @SuppressLint("RestrictedApi")
-@OptIn(ExperimentalSerializationApi::class)
+@OptIn(ExperimentalSerializationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun FinanceRApp(viewModel : AppViewModel = viewModel(factory = AppViewModel.Factory)) {
     val ui by viewModel.uiState.collectAsState()
     val starting = viewModel.startingValue
+    val conf = LocalConfiguration.current
 
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -68,6 +83,32 @@ fun FinanceRApp(viewModel : AppViewModel = viewModel(factory = AppViewModel.Fact
     } else {
         Profile
     }
+
+    if(conf.orientation == Configuration.ORIENTATION_LANDSCAPE){
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .fillMaxSize()
+        ) {
+            Card(
+
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer,),
+                modifier = Modifier.wrapContentSize(align = Alignment.Center),
+
+            ) {
+                Text(
+                    text = "As of this moment the app does not work for landscape mode, please rotate your device.",
+                    modifier = Modifier
+                        .background(Color.Transparent)
+                        .padding(16.dp)
+                )
+
+            }
+        }
+        return
+    }
+
 
 
     when(ui){
@@ -105,8 +146,24 @@ fun FinanceRApp(viewModel : AppViewModel = viewModel(factory = AppViewModel.Fact
                     }
                 }
             ) {
-                Scaffold { innerPadding ->
-                    Column(modifier = Modifier.padding(innerPadding)) {
+                Scaffold(
+                    topBar = {
+                        CenterAlignedTopAppBar(
+                            title = {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(text = "financeR")
+                                    Text(text = "Recall your finances today", fontSize = MaterialTheme.typography.labelSmall.fontSize)
+                                }
+                            },
+
+                            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer, titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                        )
+                    }
+                ) { innerPadding ->
+                     Column(modifier = Modifier.padding(innerPadding)) {
                         NavHost(navController = navController, startDestination = startDest) {
                             composable<Home> { backStackEntry ->
                                 backStackEntry.toRoute<Home>()

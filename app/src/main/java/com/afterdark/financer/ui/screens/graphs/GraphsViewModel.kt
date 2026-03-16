@@ -13,19 +13,14 @@ import com.afterdark.financer.FinanceRApplication
 import com.afterdark.financer.data.models.CategoryEntity
 import com.afterdark.financer.data.repositories.CategoryRepository
 import com.afterdark.financer.ui.UiState
+import com.afterdark.financer.ui.asUiState
 import com.afterdark.financer.ui.screens.Graph
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import com.afterdark.financer.ui.asUiState
-
 
 
 //maybe will add more in the future

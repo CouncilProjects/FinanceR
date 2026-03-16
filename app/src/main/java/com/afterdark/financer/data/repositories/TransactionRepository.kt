@@ -4,7 +4,6 @@ import com.afterdark.financer.data.daos.TransactionDao
 import com.afterdark.financer.data.models.TransactionEntity
 import com.afterdark.financer.data.models.TransactionWithCategory
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class TransactionRepository(private val transactionDao: TransactionDao) {

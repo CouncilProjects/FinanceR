@@ -14,9 +14,9 @@ import androidx.navigation.toRoute
 import com.afterdark.financer.FinanceRApplication
 import com.afterdark.financer.data.repositories.TransactionRepository
 import com.afterdark.financer.ui.TriggeredUi
-import com.afterdark.financer.ui.screens.History
 import com.afterdark.financer.ui.UiState
 import com.afterdark.financer.ui.asUiState
+import com.afterdark.financer.ui.screens.History
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

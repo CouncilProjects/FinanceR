@@ -1,12 +1,10 @@
 package com.afterdark.financer.ui.screens.graphs
 
-import android.R.attr.textSize
-import android.widget.Toast
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,14 +18,11 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.afterdark.financer.ui.UiState
 import kotlin.math.cos
 import kotlin.math.sin
-import android.graphics.Paint
-import androidx.compose.foundation.layout.aspectRatio
-import com.afterdark.financer.ui.UiState
 
 @Composable
 fun GraphsScreen(viewModel: GraphsViewModel = viewModel(factory = GraphsViewModel.FACTORY), modifier: Modifier= Modifier){

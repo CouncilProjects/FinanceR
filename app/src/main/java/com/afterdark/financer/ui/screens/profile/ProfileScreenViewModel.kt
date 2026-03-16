@@ -16,13 +16,12 @@ import com.afterdark.financer.ui.asUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import  com.afterdark.financer.ui.screens.profile.ProfileScreenUi
+
 class ProfileScreenViewModel(private val profileRepo: ProfileRepository,private val preferenceRepo: PreferencesRepository) : ViewModel() {
     
     

@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import com.afterdark.financer.data.models.ProfileEntity
-import com.afterdark.financer.ui.screens.Profile
 import kotlinx.coroutines.flow.Flow
 
 @Dao
